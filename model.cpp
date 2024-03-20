@@ -1,7 +1,6 @@
 #include <iostream>
 #include <sstream>
 #include "model.h"
-
 Model::Model(const std::string filename) {
     std::ifstream in;
     in.open(filename, std::ifstream::in);
@@ -56,9 +55,12 @@ int Model::nfaces() const {
     return facet_vrt.size()/3;
 }
 
+
+
 vec3 Model::vert(const int i) const {
     return verts[i];
 }
+
 
 vec3 Model::vert(const int iface, const int nthvert) const {
     return verts[facet_vrt[iface*3+nthvert]];

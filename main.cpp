@@ -4,8 +4,10 @@
 
 
 
+constexpr int width  = 800; // output image size
+constexpr int height = 800;
 
-const TGAColor red   = TGAColor(255, 255,   255,   255);
+const TGAColor white   = TGAColor(255, 255,   255,   255);
 
 
 void line(int x0, int y0, int x1, int y1, TGAImage &image, TGAColor color) { 
@@ -45,6 +47,7 @@ int main(int argc, char** argv) {
     // Créer une instance de la classe Model en passant le nom du fichier OBJ
     Model model("obj//african_head/african_head.obj");
 
+    
     // Vérifier si le chargement du modèle a réussi
     if (model.nverts() == 0 || model.nfaces() == 0) {
         std::cerr << "Failed to load model." << std::endl;
@@ -53,12 +56,44 @@ int main(int argc, char** argv) {
 
 
     // Afficher les points des sommets commençant par "v" ( ppour afficher un nuage )
-    std::cout << "Vertices starting with 'v':" << std::endl;
+    //std::cout << "Vertices starting with 'v':" << std::endl;
     for (int i = 0; i < model.nverts(); ++i) {
         vec3 vertex = model.vert(i);
         std::cout << "v " << vertex[0] << " " << vertex[1] << " " << vertex[2] << std::endl;
-        image.set(vertex[0]*64+64,vertex[1]*64+64,red);
+        image.set(vertex[0]*64+64,vertex[1]*64+64,white);
+
+
     }
+
+
+    
+
+
+    // Afficher les faces du modèle
+    
+    /*
+    std::cout << "Faces:" << std::endl;
+    for (int i = 0; i < model.nfaces(); ++i) {
+        std::vector<int> face =  model.face(i); 
+        for (int j=0; j<3; j++) { 
+            vec3 v0 = model.vert(face[j]); 
+            vec3 v1 = model.vert(face[(j+1)%3]); 
+            int x0 = (v0.x+1.)*width/2.; 
+            int y0 = (v0.y+1.)*height/2.; 
+            int x1 = (v1.x+1.)*width/2.; 
+            int y1 = (v1.y+1.)*height/2.; 
+            line(x0, y0, x1, y1, image, white); 
+        } 
+    }*/
+
+/*
+    for (int i = 0; i < model.nverts(); ++i) {
+        vec3 vertex = model.vert(i);
+       // std::cout << "v " << vertex[0] << " " << vertex[1] << " " << vertex[2] << std::endl;
+
+        line(x0, y0, x1, y1, image, white);  
+    }
+*/
 
 
     //line(13, 20, 80, 40, image, white);

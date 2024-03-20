@@ -13,6 +13,7 @@ class Model {
     TGAImage diffusemap{};         // diffuse color texture
     TGAImage normalmap{};          // normal map texture
     TGAImage specularmap{};        // specular map texture
+    std::vector<std::vector<int> > faces_;
     void load_texture(const std::string filename, const std::string suffix, TGAImage &img);
 public:
     Model(const std::string filename);
@@ -21,6 +22,7 @@ public:
     vec3 normal(const int iface, const int nthvert) const; // per triangle corner normal vertex
     vec3 normal(const vec2 &uv) const;                     // fetch the normal vector from the normal map texture
     vec3 vert(const int i) const;
+    
     vec3 vert(const int iface, const int nthvert) const;
     vec2 uv(const int iface, const int nthvert) const;
     const TGAImage& diffuse()  const { return diffusemap;  }
