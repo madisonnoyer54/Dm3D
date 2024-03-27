@@ -41,34 +41,54 @@ void line(int x0, int y0, int x1, int y1, TGAImage &image, TGAColor color) {
         } 
     } 
 } 
-/*
-void triangle(vec2 t0, vec2 t1, vec2 t2, TGAImage &image, TGAColor color) {
-    if (t0.y==t1.y && t0.y==t2.y) return; // i dont care about degenerate triangles
-    if (t0.y>t1.y) std::swap(t0, t1);
-    if (t0.y>t2.y) std::swap(t0, t2);
-    if (t1.y>t2.y) std::swap(t1, t2);
-    int total_height = t2.y-t0.y;
-    for (int i=0; i<total_height; i++) {
-        bool second_half = i>t1.y-t0.y || t1.y==t0.y;
-        int segment_height = second_half ? t2.y-t1.y : t1.y-t0.y;
-        float alpha = (float)i/total_height;
-        float beta  = (float)(i-(second_half ? t1.y-t0.y : 0))/segment_height; // be careful: with above conditions no division by zero here
-        vec2 A =               t0 + (t2-t0)*alpha;
-        vec2 B = second_half ? t1 + (t2-t1)*beta : t0 + (t1-t0)*beta;
-        if (A.x>B.x) std::swap(A, B);
-        for (int j=A.x; j<=B.x; j++) {
-            image.set(j, t0.y+i, color); // attention, due to int casts t0.y+i != A.y
-        }
-    }
+ 
+vec3 barycentric(vec2 pts[3], vec2 P) { 
+    vec3 a = {pts[2][0] - pts[0][0], pts[1][0]-pts[0][0], pts[0][0]-P[0]};
+    vec3 b = {pts[2][1]-pts[0][1], pts[1][1]-pts[0][1], pts[0][1]-P[1]};
+    vec3 u = cross(a, b);
+    
+    if (std::abs(u.z) < 1) 
+        return vec3{-1, 1, 1}; // Triangle dégénéré 
+    else 
+        return vec3{1.f - (u.x + u.y) / u.z, u.y / u.z, u.x / u.z}; 
 }
-*/
+
+
+
+void triangle( vec2 p1, vec2 p2, vec2 p3, TGAImage &image, TGAColor color){
+    vec2 pts[3] = {p1,p2,p3};
+    // On definie les variable de limite.
+    vec2 x_min = {image.get_width()-1,  image.get_height()-1};
+    vec2 x_max = {0,0};
+
+    vec2 x = {image.get_width()-1,  image.get_height()-1};
+
+    // Calcule la limite de la boite englobante par rapport au 3 point
+    for ( int i = 0;i<3; i ++){
+        x_min.x = std::max(0.0, std::min(x_min.x, pts[i].x));
+	    x_min.y = std::max(0.0, std::min(x_min.y, pts[i].y));
+
+	    x_max.x = std::min(x.x, std::max(x_max.x, pts[i].x));
+	    x_max.y = std::min(x.y, std::max(x_max.y, pts[i].y));
+    }
+
+    // Remplir les triangle 
+    vec2 p;
+    for (p.x=x_min.x; p.x<=x_max.x; p.x++) { 
+        for (p.y=x_min.y; p.y<=x_max.y; p.y++) { 
+            vec3 bc_screen  = barycentric(pts, p); 
+            if (bc_screen.x<0 || bc_screen.y<0 || bc_screen.z<0) continue; 
+            image.set(p.x, p.y, color); 
+        } 
+    } 
+
+}
+
 int main(int argc, char** argv) {
-     TGAImage image(800, 800, TGAImage::RGB);
-    //image.set(0, 0, red); // Color the point (0,0) with red
+     TGAImage image(width, height, TGAImage::RGB);
 
     // Créer une instance de la classe Model en passant le nom du fichier OBJ
     Model model("obj//african_head/african_head.obj");
-
     
     // Vérifier si le chargement du modèle a réussi
     if (model.nverts() == 0 || model.nfaces() == 0) {
@@ -77,7 +97,7 @@ int main(int argc, char** argv) {
     }
 
 
-    // Afficher les points des sommets commençant par "v" ( ppour afficher un nuage )
+    // Afficher la face en point 
     //std::cout << "Vertices starting with 'v':" << std::endl;
     /*
     for (int i = 0; i < model.nverts(); ++i) {
@@ -89,10 +109,9 @@ int main(int argc, char** argv) {
     }*/
 
 
-    std::cout << "Faces:" << std::endl;
+    // Pour faire la face en segment 
+    /*
     for (int i = 0; i < model.nfaces(); ++i) {
-     
-        
         std::vector<int> face =  model.face(i); 
         for (int j=0; j<3; j++) { 
             vec3 v0 = model.vert(face[j]); 
@@ -101,12 +120,39 @@ int main(int argc, char** argv) {
             int y0 = (v0.y+1.)*height/2.; 
             int x1 = (v1.x+1.)*width/2.; 
             int y1 = (v1.y+1.)*height/2.; 
-            std::cout << "x is equal to " << y0; 
             line(x0, y0, x1, y1, image, white); 
         } 
+    }*/
+
+    // Pour faire les triangle 
+    
+    for (int i = 0; i < model.nfaces(); ++i) {
+        std::vector<int> face =  model.face(i); 
+        vec2 coordonnee1;
+        vec2 coordonnee2;
+        vec2 coordonnee3;
+
+
+        
+        for (int j=0; j<3; j++) {
+            vec3 v0 = model.vert(face[j]);
+            vec3 v1 = model.vert(face[(j+1)%3]); 
+            vec3 v2 = model.vert(face[(j+2)%3]); 
+        
+            coordonnee1.x = (v0.x+1.)*width/2.; 
+            coordonnee1.y = (v0.y+1.)*height/2.;
+            coordonnee2.x = (v1.x+1.)*width/2.;
+            coordonnee2.y = (v1.y+1.)*height/2.;
+            coordonnee3.x = (v2.x+1.)*width/2.; 
+            coordonnee3.y = (v2.y+1.)*height/2.;
+            triangle(coordonnee1, coordonnee2, coordonnee3, image, TGAColor(rand()%255, rand()%255, rand()%255, 255));
+
+        }
+       
+        
     }
 
-  //  line(13, 20, 80, 40, image, white);
+
 
     image.flip_vertically(); // i want to have the origin at the left bottom corner of the image
     image.write_tga_file("output.tga");
