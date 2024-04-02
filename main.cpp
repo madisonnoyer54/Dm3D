@@ -11,6 +11,8 @@ Model *model = NULL;
 const int width  = 800;
 const int height = 800;
 
+float limite = -0.05;
+
 
 void line(int x0, int y0, int x1, int y1, TGAImage &image, TGAColor color) { 
     bool steep = false; 
@@ -42,8 +44,8 @@ void line(int x0, int y0, int x1, int y1, TGAImage &image, TGAColor color) {
     } 
 } 
  
-vec3 barycentric(vec2 pts[3], vec2 P) { 
-    vec3 a = {pts[2][0] - pts[0][0], pts[1][0]-pts[0][0], pts[0][0]-P[0]};
+vec3 barycentric(vec3 pts[3], vec3 P) { 
+    vec3 a = {pts[2][0]-pts[0][0], pts[1][0]-pts[0][0], pts[0][0]-P[0]};
     vec3 b = {pts[2][1]-pts[0][1], pts[1][1]-pts[0][1], pts[0][1]-P[1]};
     vec3 u = cross(a, b);
     
@@ -55,13 +57,15 @@ vec3 barycentric(vec2 pts[3], vec2 P) {
 
 
 
-void triangle( vec2 p1, vec2 p2, vec2 p3, TGAImage &image, TGAColor color){
-    vec2 pts[3] = {p1,p2,p3};
+void triangle( vec3 p1, vec3 p2, vec3 p3, TGAImage &image, TGAColor color,  float *zbuffer){
+    double w = image.get_width()-1;
+    double h = image.get_height()-1;
+    vec3 pts[3] = {p1,p2,p3};
     // On definie les variable de limite.
-    vec2 x_min = {image.get_width()-1,  image.get_height()-1};
+    vec2 x_min = {w,  h};
     vec2 x_max = {0,0};
 
-    vec2 x = {image.get_width()-1,  image.get_height()-1};
+    vec2 x = {w,  h};
 
     // Calcule la limite de la boite englobante par rapport au 3 point
     for ( int i = 0;i<3; i ++){
@@ -72,20 +76,39 @@ void triangle( vec2 p1, vec2 p2, vec2 p3, TGAImage &image, TGAColor color){
 	    x_max.y = std::min(x.y, std::max(x_max.y, pts[i].y));
     }
 
+   
+
     // Remplir les triangle 
-    vec2 p;
-    for (p.x=x_min.x; p.x<=x_max.x; p.x++) { 
-        for (p.y=x_min.y; p.y<=x_max.y; p.y++) { 
-            vec3 bc_screen  = barycentric(pts, p); 
-            if (bc_screen.x<0 || bc_screen.y<0 || bc_screen.z<0) continue; 
-            image.set(p.x, p.y, color); 
-        } 
-    } 
+    vec3 p;
+    for (p.x = x_min.x; p.x <= x_max.x; p.x++) {
+        for (p.y = x_min.y; p.y <= x_max.y; p.y++) {
+            // Calculer les coordonnées barycentriques du point p par rapport au triangle
+    
+            vec3 bc_screen = barycentric(pts, p);
+
+            // Vérifier si le point p est à l'intérieur du triangle en comparant les coordonnées barycentriques
+            if (bc_screen.x >= limite && bc_screen.y >= limite && bc_screen.z >= limite){
+                p.z = 0;
+                for(int i=0; i<3; i++){
+                    p.z = p.z + pts[i].z * bc_screen[i];
+                }
+
+                if( zbuffer[int(p.x + p.y * width)] < p.z){
+                    zbuffer[int(p.x + p.y * width)] = p.z;
+                    image.set(p.x, p.y, color);
+                }
+            }
+          
+            
+        }
+    }
 
 }
 
+
+
 int main(int argc, char** argv) {
-     TGAImage image(width, height, TGAImage::RGB);
+    TGAImage image(width, height, TGAImage::RGB);
 
     // Créer une instance de la classe Model en passant le nom du fichier OBJ
     Model model("obj//african_head/african_head.obj");
@@ -124,33 +147,45 @@ int main(int argc, char** argv) {
         } 
     }*/
 
-    // Pour faire les triangle 
-    
-    for (int i = 0; i < model.nfaces(); ++i) {
-        std::vector<int> face =  model.face(i); 
-        vec2 coordonnee1;
-        vec2 coordonnee2;
-        vec2 coordonnee3;
-
-
-        
-        for (int j=0; j<3; j++) {
-            vec3 v0 = model.vert(face[j]);
-            vec3 v1 = model.vert(face[(j+1)%3]); 
-            vec3 v2 = model.vert(face[(j+2)%3]); 
-        
-            coordonnee1.x = (v0.x+1.)*width/2.; 
-            coordonnee1.y = (v0.y+1.)*height/2.;
-            coordonnee2.x = (v1.x+1.)*width/2.;
-            coordonnee2.y = (v1.y+1.)*height/2.;
-            coordonnee3.x = (v2.x+1.)*width/2.; 
-            coordonnee3.y = (v2.y+1.)*height/2.;
-            triangle(coordonnee1, coordonnee2, coordonnee3, image, TGAColor(rand()%255, rand()%255, rand()%255, 255));
-
-        }
-       
-        
+     // Crée le Z buffer 
+    float *zbuffer = new float[width*height];
+    for (int i=0; i<width*height; i++) {
+        zbuffer[i] = std::numeric_limits<int>::min();
     }
+
+    // Pour faire les triangle 
+    vec3 ligne_directrice= {0,0,-1}; // ligne directrice 
+
+
+    for (int i = 0; i < model.nfaces(); ++i) {
+        std::vector<int> face = model.face(i); 
+        vec3 coordonnee[3];
+     
+
+        vec3 vv[3]; 
+
+        for (int j = 0; j < 3; j++) {
+            vec3 v0 = model.vert(face[j]);
+        
+            coordonnee[j] = vec3{(v0.x + 1.) * width / 2.,(v0.y + 1.) * height / 2., (v0.z * 100 /2.)}; 
+
+            vv[j] = v0;
+          
+        }
+
+        vec3 n = cross((vv[2] - vv[0]), (vv[1] - vv[0])); 
+        n = n.normalized(); // Normalisation à l'intérieur de la boucle.
+
+        float intensite = (n * ligne_directrice) ;
+        if (intensite > 0) {
+    
+            triangle(coordonnee[0], coordonnee[1], coordonnee[2], image, TGAColor(intensite * 255, intensite * 255, intensite *  255, 255), zbuffer);
+        }
+
+        //triangle(coordonnee1, coordonnee2, coordonnee3, image, TGAColor(rand()% 255, rand() % 255, rand()% 255, 255));
+
+    }
+
 
 
 

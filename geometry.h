@@ -87,6 +87,8 @@ typedef vec<3> vec3;
 typedef vec<4> vec4;
 vec3 cross(const vec3 &v1, const vec3 &v2);
 
+
+
 template<int n> struct dt;
 
 template<int nrows,int ncols> struct mat {
