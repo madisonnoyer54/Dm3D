@@ -11,7 +11,7 @@ Model *model = NULL;
 const int width  = 800;
 const int height = 800;
 
-float limite = -0.05;
+float limite = -0.01;
 
 
 void line(int x0, int y0, int x1, int y1, TGAImage &image, TGAColor color) { 
@@ -62,8 +62,8 @@ void triangle( vec3 p1, vec3 p2, vec3 p3, TGAImage &image, TGAColor color,  floa
     double h = image.get_height()-1;
     vec3 pts[3] = {p1,p2,p3};
     // On definie les variable de limite.
-    vec2 x_min = {w,  h};
-    vec2 x_max = {0,0};
+    vec2 x_min = vec2{( std::numeric_limits<float>::max(),  std::numeric_limits<float>::max())};
+    vec2 x_max = vec2{(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max())};
 
     vec2 x = {w,  h};
 
@@ -87,13 +87,13 @@ void triangle( vec3 p1, vec3 p2, vec3 p3, TGAImage &image, TGAColor color,  floa
             vec3 bc_screen = barycentric(pts, p);
 
             // Vérifier si le point p est à l'intérieur du triangle en comparant les coordonnées barycentriques
-            if (bc_screen.x >= limite && bc_screen.y >= limite && bc_screen.z >= limite){
+            if ((bc_screen.x >= limite && bc_screen.y >= limite && bc_screen.z >= limite)||(bc_screen.x <= limite && bc_screen.y <= limite && bc_screen.z <= limite)){
                 p.z = 0;
                 for(int i=0; i<3; i++){
                     p.z = p.z + pts[i].z * bc_screen[i];
                 }
 
-                if( zbuffer[int(p.x + p.y * width)] < p.z){
+                if( zbuffer[int(p.x + p.y * width)] <= p.z){
                     zbuffer[int(p.x + p.y * width)] = p.z;
                     image.set(p.x, p.y, color);
                 }
@@ -167,7 +167,7 @@ int main(int argc, char** argv) {
         for (int j = 0; j < 3; j++) {
             vec3 v0 = model.vert(face[j]);
         
-            coordonnee[j] = vec3{(v0.x + 1.) * width / 2.,(v0.y + 1.) * height / 2., (v0.z * 100 /2.)}; 
+            coordonnee[j] = vec3{(v0.x + 1.) * width / 2.,(v0.y + 1.) * height / 2., ((v0.z+1) * 100 /2.)}; 
 
             vv[j] = v0;
           
