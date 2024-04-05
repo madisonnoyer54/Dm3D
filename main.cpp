@@ -11,38 +11,38 @@ Model *model = NULL;
 const int width  = 800;
 const int height = 800;
 
-float limite = -0.01;
+float limite = -0;
 
+void line(int x0, int y0, int x1, int y1, TGAImage &image, TGAColor color) {
+    bool steep = std::abs(x0 - x1) < std::abs(y0 - y1);
+    if (steep) {
+        std::swap(x0, y0);
+        std::swap(x1, y1);
+    }
+    if (x0 > x1) {
+        std::swap(x0, x1);
+        std::swap(y0, y1);
+    }
+    int dx = x1 - x0;
+    int dy = std::abs(y1 - y0);
+    int error = dx / 2;
+    int yStep = (y0 < y1) ? 1 : -1;
+    int y = y0;
 
-void line(int x0, int y0, int x1, int y1, TGAImage &image, TGAColor color) { 
-    bool steep = false; 
-    if (std::abs(x0-x1)<std::abs(y0-y1)) { 
-        std::swap(x0, y0); 
-        std::swap(x1, y1); 
-        steep = true; 
-    } 
-    if (x0>x1) { 
-        std::swap(x0, x1); 
-        std::swap(y0, y1); 
-    } 
-    int dx = x1-x0; 
-    int dy = y1-y0; 
-    int derror2 = std::abs(dy)*2; 
-    int error2 = 0; 
-    int y = y0; 
-    for (int x=x0; x<=x1; x++) { 
-        if (steep) { 
-            image.set(y, x, color); 
-        } else { 
-            image.set(x, y, color); 
-        } 
-        error2 += derror2; 
-        if (error2 > dx) { 
-            y += (y1>y0?1:-1); 
-            error2 -= dx*2; 
-        } 
-    } 
-} 
+    for (int x = x0; x <= x1; x++) {
+        if (steep) {
+            image.set(y, x, color);
+        } else {
+            image.set(x, y, color);
+        }
+        error -= dy;
+        if (error < 0) {
+            y += yStep;
+            error += dx;
+        }
+    }
+}
+
  
 vec3 barycentric(vec3 pts[3], vec3 P) { 
     vec3 a = {pts[2][0]-pts[0][0], pts[1][0]-pts[0][0], pts[0][0]-P[0]};
@@ -58,8 +58,8 @@ vec3 barycentric(vec3 pts[3], vec3 P) {
 
 
 void triangle( vec3 p1, vec3 p2, vec3 p3, TGAImage &image, TGAColor color,  float *zbuffer){
-    double w = image.get_width()-1;
-    double h = image.get_height()-1;
+    double w = image.get_width();
+    double h = image.get_height();
     vec3 pts[3] = {p1,p2,p3};
     // On definie les variable de limite.
     vec2 x_min = vec2{( std::numeric_limits<float>::max(),  std::numeric_limits<float>::max())};
@@ -145,7 +145,8 @@ int main(int argc, char** argv) {
             int y1 = (v1.y+1.)*height/2.; 
             line(x0, y0, x1, y1, image, white); 
         } 
-    }*/
+    }
+    */
 
      // Crée le Z buffer 
     float *zbuffer = new float[width*height];
@@ -166,8 +167,12 @@ int main(int argc, char** argv) {
 
         for (int j = 0; j < 3; j++) {
             vec3 v0 = model.vert(face[j]);
-        
-            coordonnee[j] = vec3{(v0.x + 1.) * width / 2.,(v0.y + 1.) * height / 2., ((v0.z+1) * 100 /2.)}; 
+            double x = (v0.x + 1.) * width / 2.;
+            double y = (v0.y + 1.) * height / 2.;
+
+            x = std::round(x); 
+            y = std::round(y); 
+            coordonnee[j] = vec3{x, y, ((v0.z+1.) * 100. /2.)}; 
 
             vv[j] = v0;
           
@@ -178,7 +183,7 @@ int main(int argc, char** argv) {
 
         float intensite = (n * ligne_directrice) ;
         if (intensite > 0) {
-    
+           
             triangle(coordonnee[0], coordonnee[1], coordonnee[2], image, TGAColor(intensite * 255, intensite * 255, intensite *  255, 255), zbuffer);
         }
 
