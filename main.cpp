@@ -56,7 +56,6 @@ vec3 barycentric(vec3 pts[3], vec3 P) {
 }
 
 
-
 void triangle( vec3 p1, vec3 p2, vec3 p3, TGAImage &image, TGAColor color,  float *zbuffer){
     double w = image.get_width();
     double h = image.get_height();
@@ -75,8 +74,6 @@ void triangle( vec3 p1, vec3 p2, vec3 p3, TGAImage &image, TGAColor color,  floa
 	    x_max.x = std::min(x.x, std::max(x_max.x, pts[i].x));
 	    x_max.y = std::min(x.y, std::max(x_max.y, pts[i].y));
     }
-
-   
 
     // Remplir les triangle 
     vec3 p;
@@ -105,48 +102,18 @@ void triangle( vec3 p1, vec3 p2, vec3 p3, TGAImage &image, TGAColor color,  floa
 
 }
 
-
-
 int main(int argc, char** argv) {
-    TGAImage image(width, height, TGAImage::RGB);
+    TGAImage image(width, height, TGAImage::RGB); // On crée l'image 
 
     // Créer une instance de la classe Model en passant le nom du fichier OBJ
     Model model("obj//african_head/african_head.obj");
     
     // Vérifier si le chargement du modèle a réussi
-    if (model.nverts() == 0 || model.nfaces() == 0) {
-        std::cerr << "Failed to load model." << std::endl;
+    if (model.nverts() == 0 || model.nfaces() == 0  || model.ntextures() == 0) {
+        std::cerr << "Le model n'a pas charge" << std::endl;
         return 1;
     }
 
-
-    // Afficher la face en point 
-    //std::cout << "Vertices starting with 'v':" << std::endl;
-    /*
-    for (int i = 0; i < model.nverts(); ++i) {
-        vec3 vertex = model.vert(i);
-        std::cout << "v " << vertex[0] << " " << vertex[1] << " " << vertex[2] << std::endl;
-        image.set(vertex[0]*64+64,vertex[1]*64+64,white);
-
-
-    }*/
-
-
-    // Pour faire la face en segment 
-    /*
-    for (int i = 0; i < model.nfaces(); ++i) {
-        std::vector<int> face =  model.face(i); 
-        for (int j=0; j<3; j++) { 
-            vec3 v0 = model.vert(face[j]); 
-            vec3 v1 = model.vert(face[(j+1)%3]); 
-            int x0 = (v0.x+1.)*width/2.; 
-            int y0 = (v0.y+1.)*height/2.; 
-            int x1 = (v1.x+1.)*width/2.; 
-            int y1 = (v1.y+1.)*height/2.; 
-            line(x0, y0, x1, y1, image, white); 
-        } 
-    }
-    */
 
      // Crée le Z buffer 
     float *zbuffer = new float[width*height];
@@ -183,16 +150,10 @@ int main(int argc, char** argv) {
 
         float intensite = (n * ligne_directrice) ;
         if (intensite > 0) {
-           
             triangle(coordonnee[0], coordonnee[1], coordonnee[2], image, TGAColor(intensite * 255, intensite * 255, intensite *  255, 255), zbuffer);
         }
 
-        //triangle(coordonnee1, coordonnee2, coordonnee3, image, TGAColor(rand()% 255, rand() % 255, rand()% 255, 255));
-
     }
-
-
-
 
     image.flip_vertically(); // i want to have the origin at the left bottom corner of the image
     image.write_tga_file("output.tga");
