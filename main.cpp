@@ -103,7 +103,11 @@ void triangle( vec3 p1, vec3 p2, vec3 p3, TGAImage &image, TGAColor color,  floa
 }
 
 int main(int argc, char** argv) {
-    TGAImage image(width, height, TGAImage::RGB); // On crée l'image 
+    TGAImage image(width, height, TGAImage::RGB); // On crée l'image
+
+    // Dans f le 2 eme composant des 3 est l'index de la texture 
+     // On recuperer l'image 
+     
 
     // Créer une instance de la classe Model en passant le nom du fichier OBJ
     Model model("obj//african_head/african_head.obj");
@@ -113,7 +117,6 @@ int main(int argc, char** argv) {
         std::cerr << "Le model n'a pas charge" << std::endl;
         return 1;
     }
-
 
      // Crée le Z buffer 
     float *zbuffer = new float[width*height];
@@ -152,11 +155,28 @@ int main(int argc, char** argv) {
         if (intensite > 0) {
             triangle(coordonnee[0], coordonnee[1], coordonnee[2], image, TGAColor(intensite * 255, intensite * 255, intensite *  255, 255), zbuffer);
         }
-
+   
     }
 
+   
     image.flip_vertically(); // i want to have the origin at the left bottom corner of the image
     image.write_tga_file("output.tga");
+
+
+    // Utile ? 
+    { 
+        TGAImage zbimage(width, height, TGAImage::GRAYSCALE);
+        for (int i=0; i<width; i++) {
+            for (int j=0; j<height; j++) {
+                zbimage.set(i, j, TGAColor(zbuffer[i+j*width], 1));
+            }
+        }
+        zbimage.flip_vertically(); 
+        zbimage.write_tga_file("zbuffer.tga");
+    }
+  
+    delete [] zbuffer;
+ 
  
     return 0;
 }
