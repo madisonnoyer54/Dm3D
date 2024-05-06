@@ -85,7 +85,6 @@ void triangle( vec3 p1, vec3 p2, vec3 p3, TGAImage &image, TGAColor color,  floa
 
             // Vérifier si le point p est à l'intérieur du triangle en comparant les coordonnées barycentriques
             if ((bc_screen.x >= limite && bc_screen.y >= limite && bc_screen.z >= limite)||(bc_screen.x <= limite && bc_screen.y <= limite && bc_screen.z <= limite)){
-
                 p.z = 0;
                 for(int i=0; i<3; i++){
                     p.z = p.z + pts[i].z * bc_screen[i];
@@ -93,9 +92,7 @@ void triangle( vec3 p1, vec3 p2, vec3 p3, TGAImage &image, TGAColor color,  floa
 
                 if( zbuffer[int(p.x + p.y * width)] <= p.z){
                     zbuffer[int(p.x + p.y * width)] = p.z;
-                    model->face(2)[0];
-
-                    image.set(p.x, p.y, model->diffuse(model->uv(1,1))); // 1339 texture 2492 faces 
+                    image.set(p.x, p.y, color);
                 }
             }
           
@@ -109,21 +106,14 @@ int main(int argc, char** argv) {
     TGAImage image(width, height, TGAImage::RGB); // On crée l'image
 
     // Dans f le 2 eme composant des 3 est l'index de la texture 
-    // On recuperer l'image 
-    TGAImage texture;
-    const char* filenameTexture = "obj/african_head/african_head_diffuse.tga";
-
-    // Lecture de l'image à partir du fichier
-    if (!texture.read_tga_file(filenameTexture)) {
-        std::cerr << "Failed to load image from file ( pour texture): " << filenameTexture << std::endl;
-        return 1;
-    }
+     // On recuperer l'image 
+     
 
     // Créer une instance de la classe Model en passant le nom du fichier OBJ
     Model model("obj//african_head/african_head.obj");
     
     // Vérifier si le chargement du modèle a réussi
-    if (model.nverts() == 0 || model.nfaces() == 0  ) {
+    if (model.nverts() == 0 || model.nfaces() == 0  || model.ntextures() == 0) {
         std::cerr << "Le model n'a pas charge" << std::endl;
         return 1;
     }
@@ -138,20 +128,15 @@ int main(int argc, char** argv) {
     vec3 ligne_directrice= {0,0,-1}; // ligne directrice 
 
 
-
-
     for (int i = 0; i < model.nfaces(); ++i) {
-        std::vector<vec3> face = model.face(i); 
-
-
+        std::vector<int> face = model.face(i); 
         vec3 coordonnee[3];
+     
+
         vec3 vv[3]; 
-        
-        //TGAColor pixelTexture = texture.get().
 
         for (int j = 0; j < 3; j++) {
-
-            vec3 v0 = model.vert(i,j);
+            vec3 v0 = model.vert(face[j]);
             double x = (v0.x + 1.) * width / 2.;
             double y = (v0.y + 1.) * height / 2.;
 
@@ -176,11 +161,6 @@ int main(int argc, char** argv) {
    
     image.flip_vertically(); // i want to have the origin at the left bottom corner of the image
     image.write_tga_file("output.tga");
-
-
-    // Afficher la texture 
-    //texture.flip_vertically(); // i want to have the origin at the left bottom corner of the image
-    //texture.write_tga_file("texture.tga");
 
 
     // Utile ? 

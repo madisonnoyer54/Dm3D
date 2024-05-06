@@ -28,18 +28,15 @@ Model::Model(const char *filename) : verts_(), faces_() {
                 f.push_back(idx);
             }
             faces_.push_back(f);
-        }else if (!line.compare(0, 3, "vt ")) {
-            iss >> trash >> trash;
+        }else if (! line.compare(0, 2, "vt")){
+            iss >> trash;
             vec2 uv;
-            for (int i=0;i<2;i++) iss >> uv[i];
-            uv_.push_back(uv);
+            for (int i=0;i<2;i++){
+                iss >> uv[i];
+            } 
+            textures_.push_back({uv.x, 1-uv.y});
         }
     }
-    // Charger toute les texture 
-   // std::cerr << "# v# " << verts_.size() << " f# "  << faces_.size() << " vt# " << uv_.size() << " vn# " << norms_.size() << std::endl;
-    load_texture(filename, "_diffuse.tga", diffusemap_);
-    load_texture(filename, "_nm.tga",      normalmap_);
-    load_texture(filename, "_spec.tga",    specularmap_);
 }
 
 Model::~Model() {
@@ -57,34 +54,21 @@ int Model::nfaces() {
     return (int)faces_.size();
 }
 
-std::vector<vec3> Model::face(int idx) {
+int Model::ntextures() {
+    return (int)textures_.size();
+}
+
+std::vector<int> Model::face(int idx) {
     return faces_[idx];
 }
 
-TGAColor Model::diffuse(vec2 uv) {
-    return diffusemap_.get(uv[0], uv[1]);
-}
+
 
 vec3 Model::vert(int i) {
     return verts_[i];
 }
 
-vec3 Model::vert(int iface, int nthvert) {
-    return verts_[faces_[iface][nthvert][0]];
-}
-
-vec2 Model::uv(int iface, int nthvert) {
-    int idx = faces_[iface][nthvert][1];
-    return vec2{uv_[idx][0]*diffusemap_.get_width(), uv_[idx][1]*diffusemap_.get_height()}; // Formule pour avoir la couleur qui correspond. 
-}
-
-void Model::load_texture(std::string filename, const char *suffix, TGAImage &img) {
-    std::string texfile(filename);
-    size_t dot = texfile.find_last_of(".");
-    if (dot!=std::string::npos) {
-        texfile = texfile.substr(0,dot) + std::string(suffix);
-        std::cerr << "texture file " << texfile << " loading " << (img.read_tga_file(texfile.c_str()) ? "ok" : "failed") << std::endl;
-        img.flip_vertically();
-    }
+vec2 Model::texture(int i) {
+    return textures_[i];
 }
 
