@@ -38,7 +38,12 @@ Model::Model(const char *filename) : verts_(), faces_() {
             } 
            // std::cerr << "x :" << uv << std::endl;
 
-            uv_.push_back({1-uv.x, uv.y});
+            uv_.push_back({uv.x, uv.y});
+        }else if (!line.compare(0, 3, "vn ")) {
+            iss >> trash >> trash;
+            vec3 n;
+            for (int i=0;i<3;i++) iss >> n[i];
+            norms_.push_back(n);
         }
     }
 
@@ -53,6 +58,10 @@ Model::Model(const char *filename) : verts_(), faces_() {
 Model::~Model() {
 }
 
+vec3 Model::normal(int iface, int nthvert) {
+    int idx = faces_[iface][nthvert][2];
+    return norms_[idx].normalized();
+}
 
 int Model::nverts() {
     return (int)verts_.size();

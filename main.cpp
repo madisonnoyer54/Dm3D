@@ -10,6 +10,7 @@ const TGAColor green = TGAColor(0,   255, 0,   255);
 Model *model = NULL;
 const int width  = 800;
 const int height = 800;
+float intensiter; 
 
 float limite = -0;
 
@@ -56,7 +57,7 @@ vec3 barycentric(vec3 pts[3], vec3 P) {
 }
 
 
-void triangle( vec3 p1, vec3 p2, vec3 p3, TGAImage &image, TGAColor color,  float *zbuffer){
+void triangle( vec3 p1, vec3 p2, vec3 p3, TGAImage &image, vec2 uv,  float *zbuffer,Model *model){
     double w = image.get_width();
     double h = image.get_height();
     vec3 pts[3] = {p1,p2,p3};
@@ -77,6 +78,7 @@ void triangle( vec3 p1, vec3 p2, vec3 p3, TGAImage &image, TGAColor color,  floa
 
     // Remplir les triangle 
     vec3 p;
+    TGAColor color;
     for (p.x = x_min.x; p.x <= x_max.x; p.x++) {
         for (p.y = x_min.y; p.y <= x_max.y; p.y++) {
             // Calculer les coordonnées barycentriques du point p par rapport au triangle
@@ -92,6 +94,18 @@ void triangle( vec3 p1, vec3 p2, vec3 p3, TGAImage &image, TGAColor color,  floa
 
                 if( zbuffer[int(p.x + p.y * width)] <= p.z){
                     zbuffer[int(p.x + p.y * width)] = p.z;
+                    vec2 newUV = vec2{uv[0]+bc_screen.x*20, uv[1]+bc_screen.y*20};
+                    TGAColor c = model->diffuse(newUV);
+                  
+                    std::cout << "get   " << newUV << std::endl; // SA C4EST TOUJOURS A 00 JSP PQ 
+
+                   
+
+                    color.r = c.r*intensiter ;
+                    color.g = c.g*intensiter ;
+                    color.b = c.b*intensiter ;
+                  
+                   
                     image.set(p.x, p.y, color);
                 }
             }
@@ -137,6 +151,9 @@ int main(int argc, char** argv) {
      
 
         vec3 vv[3]; 
+        vec2 uv;
+        int iface;
+        int nthvert;
 
         for (int j = 0; j < 3; j++) {
             vec3 v0 = model.vert(face[j]);
@@ -153,10 +170,11 @@ int main(int argc, char** argv) {
             // LA J4ESSAYE DE METTRE LA TEXTURE ET SA VEUX PAS
             //vec2 uv = model.uv(iface, nthvert);
             //std::cout << "get" << uv << std::endl; // SA C4EST TOUJOURS A 00 JSP PQ 
-
-            vec2 uv = model.uv(i, j);
+            nthvert = j;
+            iface =i;
+            uv = model.uv(i, j);
            
-            color = model.diffuse(uv);
+            //color = model.diffuse(uv);
 
             //std::cout << "Coordonnées de texture du sommet " << j << " : " << uv << std::endl;
           
@@ -165,10 +183,11 @@ int main(int argc, char** argv) {
         vec3 n = cross((vv[2] - vv[0]), (vv[1] - vv[0])); 
         n = n.normalized(); // Normalisation à l'intérieur de la boucle.
 
-        float intensite = (n * ligne_directrice) ;
-        if (intensite > 0) {
+         intensiter = (n * ligne_directrice) ;
+        if (intensiter > 0) {
            // triangle(coordonnee[0], coordonnee[1], coordonnee[2],image, TGAColor(intensite * 255, intensite * 255, intensite *  255, 255), zbuffer);
-            triangle(coordonnee[0], coordonnee[1], coordonnee[2],image, TGAColor(intensite * color.r, intensite * color.g, intensite * color.b, color.a), zbuffer);
+            //intensiter2[nthvert] = std::max(0.0, model.normal(iface, nthvert)*ligne_directrice); // get diffuse lighting intensity
+            triangle(coordonnee[0], coordonnee[1], coordonnee[2],image, uv , zbuffer,&model);
 
         }
    
