@@ -113,7 +113,7 @@ int main(int argc, char** argv) {
     Model model("obj//african_head/african_head.obj");
     
     // Vérifier si le chargement du modèle a réussi
-    if (model.nverts() == 0 || model.nfaces() == 0  || model.ntextures() == 0) {
+    if (model.nverts() == 0 || model.nfaces() == 0  || model.nuv() == 0) {
         std::cerr << "Le model n'a pas charge" << std::endl;
         return 1;
     }
@@ -126,11 +126,14 @@ int main(int argc, char** argv) {
 
     // Pour faire les triangle 
     vec3 ligne_directrice= {0,0,-1}; // ligne directrice 
+ 
+    TGAColor color;
 
 
     for (int i = 0; i < model.nfaces(); ++i) {
         std::vector<int> face = model.face(i); 
         vec3 coordonnee[3];
+        
      
 
         vec3 vv[3]; 
@@ -143,8 +146,14 @@ int main(int argc, char** argv) {
             x = std::round(x); 
             y = std::round(y); 
             coordonnee[j] = vec3{x, y, ((v0.z+1.) * 100. /2.)}; 
-
+            
             vv[j] = v0;
+
+            int iface = i; // L'indice de la face actuelle
+            int nthvert = j; // L'indice du vertex actuel dans la face
+            //vec2 uv = model.uv(iface, nthvert);
+            //std::cout << "get" << uv << std::endl;
+            //color = model.diffuse(uv);
           
         }
 
@@ -153,7 +162,7 @@ int main(int argc, char** argv) {
 
         float intensite = (n * ligne_directrice) ;
         if (intensite > 0) {
-            triangle(coordonnee[0], coordonnee[1], coordonnee[2], image, TGAColor(intensite * 255, intensite * 255, intensite *  255, 255), zbuffer);
+            triangle(coordonnee[0], coordonnee[1], coordonnee[2],image, TGAColor(intensite * 255, intensite * 255, intensite *  255, 255), zbuffer);
         }
    
     }
