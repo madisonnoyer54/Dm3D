@@ -149,11 +149,16 @@ int main(int argc, char** argv) {
             
             vv[j] = v0;
 
-            int iface = i; // L'indice de la face actuelle
-            int nthvert = j; // L'indice du vertex actuel dans la face
+            
+            // LA J4ESSAYE DE METTRE LA TEXTURE ET SA VEUX PAS
             //vec2 uv = model.uv(iface, nthvert);
-            //std::cout << "get" << uv << std::endl;
-            //color = model.diffuse(uv);
+            //std::cout << "get" << uv << std::endl; // SA C4EST TOUJOURS A 00 JSP PQ 
+
+            vec2 uv = model.uv(i, j);
+           
+            color = model.diffuse(uv);
+
+            //std::cout << "Coordonnées de texture du sommet " << j << " : " << uv << std::endl;
           
         }
 
@@ -162,7 +167,9 @@ int main(int argc, char** argv) {
 
         float intensite = (n * ligne_directrice) ;
         if (intensite > 0) {
-            triangle(coordonnee[0], coordonnee[1], coordonnee[2],image, TGAColor(intensite * 255, intensite * 255, intensite *  255, 255), zbuffer);
+           // triangle(coordonnee[0], coordonnee[1], coordonnee[2],image, TGAColor(intensite * 255, intensite * 255, intensite *  255, 255), zbuffer);
+            triangle(coordonnee[0], coordonnee[1], coordonnee[2],image, TGAColor(intensite * color.r, intensite * color.g, intensite * color.b, color.a), zbuffer);
+
         }
    
     }

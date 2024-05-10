@@ -4,6 +4,8 @@
 #include <sstream>
 #include <vector>
 #include "model.h"
+#include <iomanip> // Inclure la bibliothèque pour std::setprecision
+
 
 Model::Model(const char *filename) : verts_(), faces_() {
     std::ifstream in;
@@ -28,19 +30,23 @@ Model::Model(const char *filename) : verts_(), faces_() {
                 f.push_back(tmp);
             }
             faces_.push_back(f);
-        }else if (!line.compare(0, 2, "vt")){
-            iss >> trash;
+        } else if (!line.compare(0, 2, "vt")){
+            iss >> trash >> trash;
             vec2 uv;
             for (int i=0;i<2;i++){
                 iss >> uv[i];
             } 
-            uv_.push_back({uv.x, 1-uv.y});
+           // std::cerr << "x :" << uv << std::endl;
+
+            uv_.push_back({1-uv.x, uv.y});
         }
     }
+
+
     std::cerr << "# v# " << verts_.size() << " f# "  << faces_.size() << " vt# " << uv_.size() << " vn# " << norms_.size() << std::endl;
-    load_texture("obj//african_head/african_head", "_diffuse.tga", diffusemap_);
-    load_texture("obj//african_head/african_head", "_nm.tga",      normalmap_);
-    load_texture("obj//african_head/african_head", "_spec.tga",    specularmap_);
+    load_texture(filename, "_diffuse.tga", diffusemap_);
+    load_texture(filename, "_nm.tga",      normalmap_);
+    load_texture(filename, "_spec.tga",    specularmap_);
 
 }
 
@@ -88,8 +94,6 @@ vec2 Model::uv(int i) {
 }
 
 TGAColor Model::diffuse(vec2 uv) {
-        
-
 
     return diffusemap_.get(uv[0], uv[1]);
 }
@@ -99,9 +103,27 @@ vec2 Model::uv(int iface, int nthvert) {
 
     // Obtient l'index du sommet dans le tableau de coordonnées de texture (uv_)
     int idx = faces_[iface][nthvert][1];
-        std::cout << "Indice de sommet dans le tableau de coordonnées de texture : " << idx << std::endl;
+    float x = uv_[idx][0];
+    float y = uv_[idx][1];
+    
+
+    //std::cout << "Indice de sommet dans le tableau de coordonnées de texture : " << diffusemap_.get_width() << std::endl;
+
+int texture_height = diffusemap_.get_height();
+int texture_width = diffusemap_.get_width();
+
 
     // Retourne les coordonnées de texture du sommet ajustées en fonction de la taille de la texture
     // Multiplie les coordonnées de texture brutes par la largeur et la hauteur de la texture pour les ajuster à l'échelle de l'image
-    return vec2{uv_[idx][0] * diffusemap_.get_width(), uv_[idx][1] * diffusemap_.get_height()};
+    return vec2{x * diffusemap_.get_width(), y * diffusemap_.get_height()};
 }
+
+vec3 Model::normal(vec2 uv) {
+    TGAColor c = normalmap_.get(uv.x, uv.y);
+    vec3 res;
+    res.x = (float)c.b / 255.0f * 2.0f - 1.0f; // Blue channel
+    res.y = (float)c.g / 255.0f * 2.0f - 1.0f; // Green channel
+    res.z = (float)c.r / 255.0f * 2.0f - 1.0f; // Red channel
+    return res;
+}
+
