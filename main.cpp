@@ -57,7 +57,7 @@ vec3 barycentric(vec3 pts[3], vec3 P) {
 }
 
 
-void triangle( vec3 p1, vec3 p2, vec3 p3, TGAImage &image, vec2 uv,  float *zbuffer,Model *model){
+void triangle( vec3 p1, vec3 p2, vec3 p3, TGAImage &image, vec2 uv[3],  float *zbuffer,Model *model){
     double w = image.get_width();
     double h = image.get_height();
     vec3 pts[3] = {p1,p2,p3};
@@ -79,8 +79,14 @@ void triangle( vec3 p1, vec3 p2, vec3 p3, TGAImage &image, vec2 uv,  float *zbuf
     // Remplir les triangle 
     vec3 p;
     TGAColor color;
+
+   
+    int vx =0;
     for (p.x = x_min.x; p.x <= x_max.x; p.x++) {
+        int vy =0;
+       
         for (p.y = x_min.y; p.y <= x_max.y; p.y++) {
+          
             // Calculer les coordonnées barycentriques du point p par rapport au triangle
     
             vec3 bc_screen = barycentric(pts, p);
@@ -88,16 +94,20 @@ void triangle( vec3 p1, vec3 p2, vec3 p3, TGAImage &image, vec2 uv,  float *zbuf
             // Vérifier si le point p est à l'intérieur du triangle en comparant les coordonnées barycentriques
             if ((bc_screen.x >= limite && bc_screen.y >= limite && bc_screen.z >= limite)||(bc_screen.x <= limite && bc_screen.y <= limite && bc_screen.z <= limite)){
                 p.z = 0;
+          
                 for(int i=0; i<3; i++){
                     p.z = p.z + pts[i].z * bc_screen[i];
+                 
                 }
 
                 if( zbuffer[int(p.x + p.y * width)] <= p.z){
                     zbuffer[int(p.x + p.y * width)] = p.z;
-                    vec2 newUV = vec2{uv[0]+bc_screen.x*20, uv[1]+bc_screen.y*20};
-                    TGAColor c = model->diffuse(newUV);
                   
-                    std::cout << "get   " << newUV << std::endl; // SA C4EST TOUJOURS A 00 JSP PQ 
+                    vec2 newUV = vec2{uv[0].x * bc_screen[0] + uv[1].x* bc_screen[1]+ uv[2].x* bc_screen[2]   , uv[0].y * bc_screen[0]+ uv[1].y * bc_screen[1]+ uv[2].y* bc_screen[2]   };
+                    TGAColor c = model->diffuse(newUV);
+
+                   // std::cout << "get   " << newUV << std::endl;
+                   // std::cout << "get x y  " <<uv[0].x  <<"   "<< uv[1].x <<std::endl; 
 
                    
 
@@ -110,8 +120,10 @@ void triangle( vec3 p1, vec3 p2, vec3 p3, TGAImage &image, vec2 uv,  float *zbuf
                 }
             }
           
-            
+              vy=vy+1;
         }
+        vx=vx+1;
+     
     }
 
 }
@@ -146,39 +158,38 @@ int main(int argc, char** argv) {
 
     for (int i = 0; i < model.nfaces(); ++i) {
         std::vector<int> face = model.face(i); 
+        std::vector<int> faceTexture = model.faceTexture(i); 
+
         vec3 coordonnee[3];
         
      
 
         vec3 vv[3]; 
-        vec2 uv;
-        int iface;
-        int nthvert;
+        vec2 uv[3];
+     
 
         for (int j = 0; j < 3; j++) {
             vec3 v0 = model.vert(face[j]);
+            vec2 t0 = model.uv(faceTexture[j]);
             double x = (v0.x + 1.) * width / 2.;
             double y = (v0.y + 1.) * height / 2.;
+
+
+         
 
             x = std::round(x); 
             y = std::round(y); 
             coordonnee[j] = vec3{x, y, ((v0.z+1.) * 100. /2.)}; 
-            
+            uv[j] = t0;
             vv[j] = v0;
 
-            
-            // LA J4ESSAYE DE METTRE LA TEXTURE ET SA VEUX PAS
-            //vec2 uv = model.uv(iface, nthvert);
-            //std::cout << "get" << uv << std::endl; // SA C4EST TOUJOURS A 00 JSP PQ 
-            nthvert = j;
-            iface =i;
-            uv = model.uv(i, j);
-           
-            //color = model.diffuse(uv);
-
-            //std::cout << "Coordonnées de texture du sommet " << j << " : " << uv << std::endl;
+          
           
         }
+
+
+
+        
 
         vec3 n = cross((vv[2] - vv[0]), (vv[1] - vv[0])); 
         n = n.normalized(); // Normalisation à l'intérieur de la boucle.

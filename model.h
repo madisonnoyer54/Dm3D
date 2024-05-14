@@ -26,6 +26,7 @@ public:
 	vec3 normal(vec2 uv);
 	void load_texture(std::string filename, const char *suffix, TGAImage &img);
 	std::vector<int> face(int idx);
+	std::vector<int>  faceTexture(int idx);
 	vec3 normal(int iface, int nthvert);
 	float specular(vec2 uv);
 	TGAColor diffuse(vec2 uv);
